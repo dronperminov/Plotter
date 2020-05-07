@@ -77,8 +77,11 @@ Plotter.prototype.DrawVerticalValues = function(x0, y0) {
 	let bottom = Math.floor((this.height - this.y0) / this.cell_size_y)
 
 	for (let i = -bottom; i <= top; i++) {
+		if (i == 0)
+			continue
+
 		let y = this.y0 - i * this.cell_size_y
-		let yv = Math.round(this.HtoY(y) * 10000) / 10000
+		let yv = Math.round(this.HtoY(y) * 1000000) / 1000000
 
 		this.DrawLine(x0 - 4, y, x0 + 4, y)
 		this.ctx.fillText(yv, position, y)
@@ -95,8 +98,11 @@ Plotter.prototype.DrawHorizontalValues = function(x0, y0) {
 	let left = Math.floor(this.x0 / this.cell_size_x)
 
 	for (let i = -left; i <= right; i++) {
+		if (i == 0)
+			continue
+		
 		let x = this.x0 + i * this.cell_size_x
-		let xv = Math.round(this.WtoX(x) * 10000) / 10000
+		let xv = Math.round(this.WtoX(x) * 1000000) / 1000000
 
 		this.DrawLine(x, y0 - 4, x, y0 + 4)
 		this.ctx.fillText(xv, x, position)
