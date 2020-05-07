@@ -19,6 +19,7 @@ function Plotter(canvas, cell_size_x, cell_size_y, x0, y0, scale, grid_color, ax
 	this.axis_color = axis_color
 
 	this.functions = []
+	this.isPressed = false
     this.InitHandlers()
 }
 
@@ -28,12 +29,24 @@ Plotter.prototype.InitHandlers = function() {
     document.addEventListener('mousewheel', function(e) {
         plotter.MouseWheel(e)
     })
+
+    document.addEventListener('mousedown', function(e) {
+        plotter.MouseDown(e)
+    })
+
+    document.addEventListener('mouseup', function(e) {
+        plotter.MouseUp(e)
+    })
+
+    document.addEventListener('mousemove', function(e) {
+        plotter.MouseMove(e)
+    })
 }
 
 // установка в центр картинки точки (x0, y0)
 Plotter.prototype.SetCenter = function(x0, y0) {
-	this.x0 = this.width / 2 - this.cell_size_x * x0
-	this.y0 = this.height / 2 + this.cell_size_y * y0
+	this.x0 = this.width / 2 - this.cell_size_x * x0 * this.scale
+	this.y0 = this.height / 2 + this.cell_size_y * y0 * this.scale
 
 	this.xmin = x0 - this.cells_x / this.scale
 	this.xmax = x0 + this.cells_x / this.scale
@@ -100,7 +113,7 @@ Plotter.prototype.DrawHorizontalValues = function(x0, y0) {
 	for (let i = -left; i <= right; i++) {
 		if (i == 0)
 			continue
-		
+
 		let x = this.x0 + i * this.cell_size_x
 		let xv = Math.round(this.WtoX(x) * 1000000) / 1000000
 
@@ -182,8 +195,15 @@ Plotter.prototype.Plot = function() {
 
 // обработчик прокручивания колеса мыши
 Plotter.prototype.MouseWheel = function(e) {
-    let x0 = (this.width / 2 - this.x0) / this.cell_size_x
-    let y0 = (this.y0 - this.height / 2) / this.cell_size_y
+    let x0 = (this.width / 2 - this.x0) / this.cell_size_x / this.scale
+    let y0 = (this.y0 - this.height / 2) / this.cell_size_y / this.scale
+
+    let x = this.WtoX(e.offsetX)
+    let y = this.HtoY(e.offsetY)
+
+    let dx = x - x0
+    let dy = y - y0
+
     let scale
 
     if (e.deltaY > 0) {
@@ -196,6 +216,38 @@ Plotter.prototype.MouseWheel = function(e) {
     }
 
     this.scale *= scale
+    this.SetCenter(x - dx / scale, y - dy / scale)
+    this.Plot()
+}
+
+// обработчик нажатия кнопки мыши
+Plotter.prototype.MouseDown = function(e) {
+	if (e.target.tagName == "CANVAS") {
+		this.isPressed = true
+		this.prevX = e.offsetX
+		this.prevY = e.offsetY
+	}
+}
+
+// обработчик отжатия кнопки мыши
+Plotter.prototype.MouseUp = function(e) {
+	this.isPressed = false
+}
+
+// обработчик перемещения мыши
+Plotter.prototype.MouseMove = function(e) {
+	if (!this.isPressed)
+		return;
+
+	let dx = e.offsetX - this.prevX
+	let dy = e.offsetY - this.prevY
+
+	this.prevX = e.offsetX
+	this.prevY = e.offsetY
+
+	let x0 = (this.width / 2 - this.x0 - dx) / this.cell_size_x / this.scale
+    let y0 = (this.y0 + dy - this.height / 2) / this.cell_size_y / this.scale
+
     this.SetCenter(x0, y0)
     this.Plot()
 }
