@@ -23,6 +23,8 @@
 		// точка центра
 		const X0 = 0
 		const Y0 = 0
+
+		const SCALE = 1 // масштаб
 		
 		const GRID_COLOR = "#ccc" // цвет сетки
 		const AXIS_COLOR = "#000" // цвет осей
@@ -40,7 +42,7 @@
 		canvas.width = WIDTH
 		canvas.height = HEIGHT
 	
-		let plotter = new Plotter(canvas, CELL_SIZE_X, CELL_SIZE_Y, X0, Y0, GRID_COLOR, AXIS_COLOR)
+		let plotter = new Plotter(canvas, CELL_SIZE_X, CELL_SIZE_Y, X0, Y0, SCALE, GRID_COLOR, AXIS_COLOR)
 
 		plotter.AddFunction(f1, "#00f")
 		plotter.AddFunction(f2, "#f00")

@@ -1,4 +1,4 @@
-function Plotter(canvas, cell_size_x, cell_size_y, x0, y0, grid_color, axis_color) {
+function Plotter(canvas, cell_size_x, cell_size_y, x0, y0, scale, grid_color, axis_color) {
 	this.width = canvas.width
 	this.height = canvas.height
 	this.ctx = canvas.getContext("2d")
@@ -9,12 +9,25 @@ function Plotter(canvas, cell_size_x, cell_size_y, x0, y0, grid_color, axis_colo
 	this.cells_x = this.width / (this.cell_size_x * 2)
 	this.cells_y = this.height / (this.cell_size_y * 2)
 
+	this.scale = scale
+    this.scales = [ 2, 2, 2.5 ]
+    this.scaleIndex = 0
+
 	this.SetCenter(x0, y0)
 
 	this.grid_color = grid_color
 	this.axis_color = axis_color
 
 	this.functions = []
+    this.InitHandlers()
+}
+
+Plotter.prototype.InitHandlers = function() {
+    let plotter = this
+
+    document.addEventListener('mousewheel', function(e) {
+        plotter.MouseWheel(e)
+    })
 }
 
 // установка в центр картинки точки (x0, y0)
@@ -22,11 +35,11 @@ Plotter.prototype.SetCenter = function(x0, y0) {
 	this.x0 = this.width / 2 - this.cell_size_x * x0
 	this.y0 = this.height / 2 + this.cell_size_y * y0
 
-	this.xmin = x0 - this.cells_x
-	this.xmax = x0 + this.cells_x
+	this.xmin = x0 - this.cells_x / this.scale
+	this.xmax = x0 + this.cells_x / this.scale
 
-	this.ymin = y0 - this.cells_y
-	this.ymax = y0 + this.cells_y
+	this.ymin = y0 - this.cells_y / this.scale
+	this.ymax = y0 + this.cells_y / this.scale
 }
 
 // отрисовка линии
@@ -47,16 +60,10 @@ Plotter.prototype.DrawGrid = function() {
 	let right = Math.floor((this.width - this.x0) / this.cell_size_x) 
 	let left = Math.floor(this.x0 / this.cell_size_x)
 
-	for (let i = 1; i <= top; i++)
+	for (let i = -bottom; i <= top; i++)
 		this.DrawLine(0, this.y0 - i * this.cell_size_y, this.width, this.y0 - i * this.cell_size_y)
 
-	for (let i = 1; i <= bottom; i++)
-		this.DrawLine(0, this.y0 + i * this.cell_size_y, this.width, this.y0 + i * this.cell_size_y)
-
-	for (let i = 1; i <= left; i++)
-		this.DrawLine(this.x0 - i * this.cell_size_x, 0, this.x0 - i * this.cell_size_x, this.height)
-
-	for (let i = 1; i <= right; i++)
+	for (let i = -left; i <= right; i++)
 		this.DrawLine(this.x0 + i * this.cell_size_x, 0, this.x0 + i * this.cell_size_x, this.height)
 }
 
@@ -69,14 +76,12 @@ Plotter.prototype.DrawVerticalValues = function(x0, y0) {
 	let top = Math.floor(this.y0 / this.cell_size_y)
 	let bottom = Math.floor((this.height - this.y0) / this.cell_size_y)
 
-	for (let i = 1; i <= top; i++) {
-		this.DrawLine(x0 - 4, this.y0 - i * this.cell_size_y, x0 + 4, this.y0 - i * this.cell_size_y)
-		this.ctx.fillText(i, position, this.y0 - i * this.cell_size_y)
-	}
+	for (let i = -bottom; i <= top; i++) {
+		let y = this.y0 - i * this.cell_size_y
+		let yv = Math.round(this.HtoY(y) * 10000) / 10000
 
-	for (let i = 1; i <= bottom; i++) {
-		this.DrawLine(x0 - 4, this.y0 + i * this.cell_size_y, x0 + 4, this.y0 + i * this.cell_size_y)
-		this.ctx.fillText(-i, position, this.y0 + i * this.cell_size_y)
+		this.DrawLine(x0 - 4, y, x0 + 4, y)
+		this.ctx.fillText(yv, position, y)
 	}
 }
 
@@ -89,14 +94,12 @@ Plotter.prototype.DrawHorizontalValues = function(x0, y0) {
 	let right = Math.floor((this.width - this.x0) / this.cell_size_x) 
 	let left = Math.floor(this.x0 / this.cell_size_x)
 
-	for (let i = 1; i <= right; i++){
-		this.DrawLine(this.x0 + i * this.cell_size_x, y0 - 4, this.x0 + i * this.cell_size_x, y0 + 4)
-		this.ctx.fillText(i, this.x0 + i * this.cell_size_x, position)
-	}
+	for (let i = -left; i <= right; i++) {
+		let x = this.x0 + i * this.cell_size_x
+		let xv = Math.round(this.WtoX(x) * 10000) / 10000
 
-	for (let i = 1; i <= left; i++){
-		this.DrawLine(this.x0 - i * this.cell_size_x, y0 - 4, this.x0 - i * this.cell_size_x, y0 + 4)
-		this.ctx.fillText(-i, this.x0 - i * this.cell_size_x, position)
+		this.DrawLine(x, y0 - 4, x, y0 + 4)
+		this.ctx.fillText(xv, x, position)
 	}
 }
 
@@ -136,6 +139,16 @@ Plotter.prototype.YtoH = function(y) {
 	return this.Map(y, this.ymin, this.ymax, this.height, 0)
 }
 
+// перевод w в пространство функции
+Plotter.prototype.WtoX = function(w) {
+	return this.Map(w, 0, this.width, this.xmin, this.xmax)
+}
+
+// перевод h в пространство функции
+Plotter.prototype.HtoY = function(h) {
+	return this.Map(h, this.height, 0, this.ymin, this.ymax)
+}
+
 // построение функции
 Plotter.prototype.PlotFunction = function(func) {
 	let step = (this.xmax - this.xmin) / this.width
@@ -151,6 +164,7 @@ Plotter.prototype.PlotFunction = function(func) {
 	this.ctx.stroke()
 }
 
+// отрисовка графиков
 Plotter.prototype.Plot = function() {
 	this.ctx.clearRect(0, 0, this.width, this.height)
 	this.DrawGrid()
@@ -158,4 +172,24 @@ Plotter.prototype.Plot = function() {
 
 	for (let i = 0; i < this.functions.length; i++)
 		this.PlotFunction(this.functions[i])
+}
+
+// обработчик прокручивания колеса мыши
+Plotter.prototype.MouseWheel = function(e) {
+    let x0 = (this.width / 2 - this.x0) / this.cell_size_x
+    let y0 = (this.y0 - this.height / 2) / this.cell_size_y
+    let scale
+
+    if (e.deltaY > 0) {
+        this.scaleIndex = (this.scaleIndex + this.scales.length - 1) % this.scales.length
+        scale = 1 / this.scales[this.scaleIndex]
+    }
+    else {
+        scale = this.scales[this.scaleIndex]
+        this.scaleIndex = (this.scaleIndex + 1) % this.scales.length
+    }
+
+    this.scale *= scale
+    this.SetCenter(x0, y0)
+    this.Plot()
 }
