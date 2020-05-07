@@ -43,6 +43,10 @@ Plotter.prototype.InitHandlers = function() {
     })
 }
 
+Plotter.prototype.Round = function(x) {
+	return Math.round(x * 1000000) / 1000000
+}
+
 // установка в центр картинки точки (x0, y0)
 Plotter.prototype.SetCenter = function(x0, y0) {
 	this.x0 = this.width / 2 - this.cell_size_x * x0 * this.scale
@@ -94,7 +98,7 @@ Plotter.prototype.DrawVerticalValues = function(x0, y0) {
 			continue
 
 		let y = this.y0 - i * this.cell_size_y
-		let yv = Math.round(this.HtoY(y) * 1000000) / 1000000
+		let yv = this.Round(this.HtoY(y))
 
 		this.DrawLine(x0 - 4, y, x0 + 4, y)
 		this.ctx.fillText(yv, position, y)
@@ -115,7 +119,7 @@ Plotter.prototype.DrawHorizontalValues = function(x0, y0) {
 			continue
 
 		let x = this.x0 + i * this.cell_size_x
-		let xv = Math.round(this.WtoX(x) * 1000000) / 1000000
+		let xv = this.Round(this.WtoX(x))
 
 		this.DrawLine(x, y0 - 4, x, y0 + 4)
 		this.ctx.fillText(xv, x, position)
@@ -193,6 +197,31 @@ Plotter.prototype.Plot = function() {
 		this.PlotFunction(this.functions[i])
 }
 
+// отображение точек на функциях
+Plotter.prototype.ShowValues = function(mx, my) {
+	let x = this.WtoX(mx)
+	let y = this.HtoY(my)
+
+	this.ctx.textBaseline = 'bottom'
+
+	for (let i = 0; i < this.functions.length; i++) {
+		let f = this.functions[i].f(x)
+		let fy = this.YtoH(f)
+
+		this.ctx.beginPath()
+		this.ctx.fillStyle = this.functions[i].color
+		this.ctx.arc(mx, fy, 5, 0, Math.PI * 2)
+		this.ctx.fill()
+		this.ctx.fillText(this.Round(x) + ', ' + this.Round(f), mx, fy)
+	}
+
+	this.ctx.beginPath()
+	this.ctx.fillStyle = this.axis_color
+	this.ctx.arc(mx, my, 5, 0, Math.PI * 2)
+	this.ctx.fill()
+	this.ctx.fillText(this.Round(x) + ', ' + this.Round(y), mx, my)
+}
+
 // обработчик прокручивания колеса мыши
 Plotter.prototype.MouseWheel = function(e) {
     let x0 = (this.width / 2 - this.x0) / this.cell_size_x / this.scale
@@ -218,6 +247,7 @@ Plotter.prototype.MouseWheel = function(e) {
     this.scale *= scale
     this.SetCenter(x - dx / scale, y - dy / scale)
     this.Plot()
+	this.ShowValues(e.offsetX, e.offsetY)
 }
 
 // обработчик нажатия кнопки мыши
@@ -236,8 +266,11 @@ Plotter.prototype.MouseUp = function(e) {
 
 // обработчик перемещения мыши
 Plotter.prototype.MouseMove = function(e) {
-	if (!this.isPressed)
+	if (!this.isPressed) {
+		this.Plot()
+		this.ShowValues(e.offsetX, e.offsetY)
 		return;
+	}
 
 	let dx = e.offsetX - this.prevX
 	let dy = e.offsetY - this.prevY
