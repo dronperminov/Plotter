@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Plotter</title>
+	<style>
+		canvas {
+			border: 1px solid #000
+		}
+	</style>
+</head>
+<body>
+	<canvas id="canvas"></canvas>
+	<script src="plotter.js"></script>
+	<script>
+		// размеры изображения
+		const HEIGHT = 900
+		const WIDTH = 1900
+
+		// размеры клетки
+		const CELL_SIZE_X = 90
+		const CELL_SIZE_Y = 90
+
+		// точка центра
+		const X0 = 0
+		const Y0 = 0
+		
+		const GRID_COLOR = "#ccc" // цвет сетки
+		const AXIS_COLOR = "#000" // цвет осей
+
+		function f1 (x) {
+			return (Math.cos(x) * Math.sin(x) + 4) / 2
+		}
+
+		function f2 (x) {
+			return x * x / 4
+		}
+
+		let canvas = document.getElementById("canvas")
+
+		canvas.width = WIDTH
+		canvas.height = HEIGHT
+	
+		let plotter = new Plotter(canvas, CELL_SIZE_X, CELL_SIZE_Y, X0, Y0, GRID_COLOR, AXIS_COLOR)
+
+		plotter.AddFunction(f1, "#00f")
+		plotter.AddFunction(f2, "#f00")
+		plotter.AddFunction(Math.sin, "#080")
+		plotter.Plot()
+	</script>
+</body>
+</html>
