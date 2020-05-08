@@ -19,6 +19,8 @@ function Plotter(canvas, cell_size_x, cell_size_y, x0, y0, scale, grid_color, ax
 	this.axis_color = axis_color
 
 	this.functions = []
+	this.parametricFunctions = []
+
 	this.isPressed = false
     this.InitHandlers()
 }
@@ -147,6 +149,11 @@ Plotter.prototype.AddFunction = function(f, color) {
 	this.functions.push({ f: f, color: color })
 }
 
+// добавление параметрической функции для отрисовки
+Plotter.prototype.AddParametricFunction = function(x, y, color, t1, t2, step) {
+	this.parametricFunctions.push({ x: x, y: y, color: color, t1: t1, t2: t2, step: step })
+}
+
 // линейное преобразование числа x из [xmin, xmax] в [ymin, ymax]
 Plotter.prototype.Map = function(x, xmin, xmax, ymin, ymax) {
 	return (x - xmin) / (xmax - xmin) * (ymax - ymin) + ymin
@@ -187,6 +194,20 @@ Plotter.prototype.PlotFunction = function(func) {
 	this.ctx.stroke()
 }
 
+// построение параметрической функции
+Plotter.prototype.PlotParametricFunction = function(func) {
+	this.ctx.strokeStyle = func.color
+	this.ctx.lineWidth = 2
+	
+	this.ctx.beginPath()
+	this.ctx.moveTo(this.XtoW(func.x(func.t1)), this.YtoH(func.y(func.t1)))
+
+	for (let t = func.t1; t <= func.t2; t += func.step)
+		this.ctx.lineTo(this.XtoW(func.x(t)), this.YtoH(func.y(t)))
+
+	this.ctx.stroke()
+}
+
 // отрисовка графиков
 Plotter.prototype.Plot = function() {
 	this.ctx.clearRect(0, 0, this.width, this.height)
@@ -195,6 +216,9 @@ Plotter.prototype.Plot = function() {
 
 	for (let i = 0; i < this.functions.length; i++)
 		this.PlotFunction(this.functions[i])
+
+	for (let i = 0; i < this.parametricFunctions.length; i++)
+		this.PlotParametricFunction(this.parametricFunctions[i])
 }
 
 // отображение точек на функциях

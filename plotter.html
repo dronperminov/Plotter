@@ -37,6 +37,9 @@
 			return x * x / 4
 		}
 
+		function x(t) { return 2 * (Math.cos(t) - Math.cos(3.1 * t) / 3.1) }
+		function y(t) { return 2 * (Math.sin(t) - Math.sin(3.1 * t) / 3.1) }
+
 		let canvas = document.getElementById("canvas")
 
 		canvas.width = WIDTH
@@ -47,6 +50,7 @@
 		plotter.AddFunction(f1, "#00f")
 		plotter.AddFunction(f2, "#f00")
 		plotter.AddFunction(Math.sin, "#080")
+		plotter.AddParametricFunction(x, y, "#ffc107", 0, Math.PI * 20, 0.01)
 		plotter.Plot()
 	</script>
 </body>
